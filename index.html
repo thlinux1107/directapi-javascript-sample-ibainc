@@ -1,0 +1,137 @@
+<!DOCTYPE HTML>
+<!–– 
+Created: 04/10/2017
+Author:Thomas Hagan
+Company: Sage Payment Systems
+Position: Integration Consultant, Product Integration
+
+Intended for educational use only, not for production.
+Any questions, please feel free to email us at sdksupport@sage.com
+––>
+    <head>
+        <title>JavaScript Direct API Sample</title>
+    		
+    	<!–– Include Script References ––>
+        <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+        <script type="text/javascript" src="/Scripts/hmac-sha512.js"></script>
+        <script type="text/javascript" src="/Scripts/enc-base64-min.js"></script>
+        
+        <script type="text/javascript">
+    
+            function getHMAC($toBeHashed, $developerCredentials) {
+                return CryptoJS.SHA512($toBeHashed, $developerCredentials);
+            }
+        
+            
+            function SageAPI() {
+                
+                //TH - Epoch timestamp code suggested by https://www.epochconverter.com/
+                var $d = new Date();
+                var $nonceid = Date.now();
+                var $timestampid = Math.round($d.getTime()/1000.0);
+                
+                //TH - Your Merchant Credentials. Please feel free to use the credentials
+                //provided in this sample. Also, if you would like to have your own test
+                //credentials with Virtual Terminal Access, please contact us at sdksupport@sage.com
+                var $merchantId = "173859436515";
+                var $merchantKey = "P1J2V8P2Q3D8";
+                
+                //TH - Your API/Developer credentials. Also sometimes referred to as 
+                //Developer ID and Developer Key. Please feel free to use the credentials
+                //provided in this sample. You will need to acquire your unique developer
+                //credentials prior to certification/production. They are provided when 
+                //you register and setup an app under "My Apps" on the developer portal 
+                //at https://developer.sagepayments.com
+                var $clientId = "W8yvKQ5XbvAn7dUDJeAnaWCEwA4yXEgd";
+                var $clientSecret = "iLzODV5AUsCGWGkr";
+        
+                //TH - test transaction information may be obtained in the API Sandbox
+                //at https://developer.sagepayments.com/apis. On any of the post_charges
+                //examples you will find test card data on the right-side of the screen
+                //under the tab "Test Cards".
+                var $cardNumber = "4111111111111111";
+                var $expDate = "1220";
+                var $orderNumber = "Invoice" + Math.floor((Math.random() * 1000) + 1);
+                
+                //TH - Request details to process a Sale
+                var $url = "https://api-cert.sagepayments.com/bankcard/v1/charges?type=Sale";
+                var $strRequestData = '{"transactionId":"","eCommerce":{"amounts":{"total":7,"tax":0,"shipping":0},"orderNumber":"' + $orderNumber  + '","cardData":{"number":"' + $cardNumber + '","expiration":"' + $expDate + '","cvv":""},"customer":{"email":"email@example.com","telephone":"","fax":""},"billing":{"name":"JohnSmith","address":"123MainSt","city":"Reston","state":"VA","postalCode":"20191","country":""},"shipping":{"name":"","address":"","city":"","state":"","postalCode":"","country":""}}}';
+                var $verb = "POST";
+                
+                //TH - Request details to store a card and retrieve a token
+                //var $url = "https://api-cert.sagepayments.com/token/v1/tokens";
+                //var $strRequestData = '{"CardData":{"Number":"' + $cardNumber + '","Expiration":"' + $expDate + '"}}';
+                //var $verb = "POST";
+                
+                
+                //TH - format the request prior to building the authorization hash.
+                var $parseRequestData = JSON.parse($strRequestData);
+                var $JSONRequestData = JSON.stringify($parseRequestData);
+                
+                //TH - build the string of data to be hashed. It should be the Verb+URL+Request+MerchantID+Nonce+Timestamp.
+                var $toBeHashed = $verb + $url + $JSONRequestData + $merchantId + $nonceid + $timestampid;
+        
+                //TH - use the the clientSecret (shared private key) to encrypt the hmac
+                var $hmac = getHMAC($toBeHashed, $clientSecret);
+                //TH - Base64 encode the hashed "Response".
+                var $b64hmac = CryptoJS.enc.Base64.stringify($hmac);
+                
+                //TH - set the content type for the POST
+                var $contentType = "application/json";
+                
+                alert(
+                    "Nonce: " + $nonceid +'\n\n'+ 
+                    "Timestamp: " + $timestampid +'\n\n'+ 
+                    "Request: " + $strRequestData +'\n\n'+ 
+                    "Data to be Hashed: " + $toBeHashed +'\n\n' + 
+                    "Authorization: " + $b64hmac
+                    );
+                    
+                
+                
+                return {nonce : $nonceid, timestamp : $timestampid, request : $strRequestData, authorization : $b64hmac, clientId : $clientId, merchantId : $merchantId, merchantKey : $merchantKey, url : $url, verb : $verb, contentType : $contentType};
+                
+                
+                
+            }
+    
+    
+        </script>        
+    
+    </head>
+
+    <body>
+
+        <div>
+            <script>
+                //TH - Gather data returned from the JavaScript function SageAPI()
+                var data = SageAPI();
+                var nonce = data.nonce;
+                var timestamp = data.timestamp;
+                var request = data.request;
+                var authorization = data.authorizatio;
+                var clientId = data.clientId;
+                var merchantId = data.merchantId;
+                var merchantKey = data.merchantKey;
+                var url = data.url;
+                var verb = data.verb;
+                var contentType = data.contentType;
+                
+                //TH - display returned data
+                document.write("<p>Nonce: " + nonce + "</p>");
+                document.write("<p>Timestamp: " + timestamp + "</p>");
+                document.write("<p>Request: " + request + "</p>");
+                document.write("<p>Authorization: " + authorization + "</p>");
+                document.write("<p>Client ID: " + clientId + "</p>");
+                document.write("<p>Merchant ID: " + merchantId + "</p>");
+                //TH - This is for demonstration purposes only. The Merchant Key should never
+                //be displayed in customer-facing code.
+                document.write("<p>Merchant Key: " + merchantKey + "</p>");
+                document.write("<p>URL: " + url + "</p>");
+                document.write("<p>Verb: " + verb + "</p>");
+                document.write("<p>Content-Type: " + contentType + "</p>");
+            </script>
+        </div>
+        
+    </body>
+</html>
